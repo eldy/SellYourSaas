@@ -29,18 +29,17 @@ fi
 #current_checksums=$(md5sum $current_certificates)
 #$verbose && echo -e "current certificates md5sums :\n$current_checksums"
 
-serial=$(grep serial $zone_file |awk '{print $1}')
-$verbose && echo "old serial : $serial"
-new_serial=$((serial+1))
+old_serial=$(grep serial $zone_file |awk '{print $1}')
+new_serial=$((old_serial+1))
+old_challenge=$(grep _acme-challenge $zone_file |awk '{print $4}')
+new_challenge="\"$CERTBOT_VALIDATION\""
+$verbose && echo "old serial : $old_serial"
 $verbose && echo "new serial : $new_serial"
-challenge_line="_acme-challenge IN        TXT      $CERTBOT_VALIDATION"
-$verbose && echo "challenge line : $challenge_line"
-sed_command='$a'
-sed_command+="$challenge_line"
-sed -i.auto.bck -e "$sed_command" $zone_file
-sed -i.auto.bck2 -e "s/$serial/$new_serial/" $zone_file
+$verbose && echo "old challenge : $old_challenge"
+$verbose && echo "new challenge : $new_challenge"
+sed -i.auto.bck -e "s/$old_challenge/$new_challenge/" $zone_file
+sed -i.auto.bck2 -e "s/$old_serial/$new_serial/" $zone_file
 systemctl stop bind9
 sleep 5
 systemctl start bind9
 sleep 10
-
