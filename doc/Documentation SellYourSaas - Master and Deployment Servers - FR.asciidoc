@@ -1743,7 +1743,7 @@ exclude_suffix := cache
 ---------------
 
 
-Test que l'exécution par la crontab fonctionne correctent en lançant sous root:
+Test que l'exécution par la crontab fonctionne correctement en lançant sous root:
 
 [source,bash]
 ---------------
