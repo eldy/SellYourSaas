@@ -65,6 +65,7 @@ $dolibarrdir='';
 $usecompressformatforarchive='gzip';
 $emailfrom='';
 $emailsupervision='';
+$usemastermailserver='';
 $fp = @fopen('/etc/sellyoursaas.conf', 'r');
 // Add each line to an array
 if ($fp) {
@@ -106,6 +107,9 @@ if ($fp) {
 		}
 		if ($tmpline[0] == 'emailsupervision') {
 			$emailsupervision = dol_sanitizeEmail($tmpline[1]);
+		}
+		if ($tmpline[0] == 'usemastermailserver') {
+			$usemastermailserver = $tmpline[1];
 		}
 	}
 } else {
@@ -510,15 +514,17 @@ if (empty($return_var) && empty($return_varmysql)) {
 		$from = $emailfrom;
 		$to = $emailsupervision;
 		// Force to use local sending (MAIN_MAIL_SENDMODE is the one of the master server. It may be to an external SMTP server not allowed to the deployment server)
-		$conf->global->MAIN_MAIL_SENDMODE = 'mail';
-		$conf->global->MAIN_MAIL_SMTP_SERVER = '';
+		if (empty($usemastermailserver)) {
+			$conf->global->MAIN_MAIL_SENDMODE = 'mail';
+			$conf->global->MAIN_MAIL_SMTP_SERVER = 'localhost';
+		}
 
 		// Supervision tools are generic for all domain. No way to target a specific supervision email.
 
 		$msg = 'Restore done without errors by '.$script_file." ".(empty($argv[1]) ? '' : $argv[1])." ".(empty($argv[2]) ? '' : $argv[2])." ".(empty($argv[3]) ? '' : $argv[3])." (finished at ".dol_print_date(dol_now('gmt'), "%Y%m%d-%H%M%S", 'gmt').")\n\n";
 
 		include_once DOL_DOCUMENT_ROOT.'/core/class/CMailFile.class.php';
-		print 'Send email MAIN_MAIL_SENDMODE='.$conf->global->MAIN_MAIL_SENDMODE.' MAIN_MAIL_SMTP_SERVER='.$conf->global->MAIN_MAIL_SMTP_SERVER.' from='.$from.' to='.$to.' title=[Restore instance - '.gethostname().'] Restore of user instance succeed.'."\n";
+		print 'Send email MAIN_MAIL_SENDMODE='.getDolGlobalString('MAIN_MAIL_SENDMODE').' MAIN_MAIL_SMTP_SERVER='.getDolGlobalString('MAIN_MAIL_SMTP_SERVER').' from='.$from.' to='.$to.' title=[Restore instance - '.gethostname().'] Restore of user instance succeed.'."\n";
 		$cmail = new CMailFile('[Restore instance - '.gethostname().'] Restore of user instance succeed - '.dol_print_date(dol_now(), 'dayrfc'), $to, $from, $msg, array(), array(), array(), '', '', 0, 0, '', '', '', '', $sendcontext);
 		$result = $cmail->sendfile();		// Use the $conf->global->MAIN_MAIL_SMTPS_PW_$SENDCONTEXT for password
 
@@ -549,15 +555,17 @@ if (empty($return_var) && empty($return_varmysql)) {
 		$from = $emailfrom;
 		$to = $emailsupervision;
 		// Force to use local sending (MAIN_MAIL_SENDMODE is the one of the master server. It may be to an external SMTP server not allowed to the deployment server)
-		$conf->global->MAIN_MAIL_SENDMODE = 'mail';
-		$conf->global->MAIN_MAIL_SMTP_SERVER = '';
+		if (empty($usemastermailserver)) {
+			$conf->global->MAIN_MAIL_SENDMODE = 'mail';
+			$conf->global->MAIN_MAIL_SMTP_SERVER = 'localhost';
+		}
 
 		// Supervision tools are generic for all domain. No way to target a specific supervision email.
 
 		$msg = 'Error in '.$script_file." ".(empty($argv[1]) ? '' : $argv[1])." ".(empty($argv[2]) ? '' : $argv[2])." ".(empty($argv[3]) ? '' : $argv[3])." (finished at ".dol_print_date(dol_now('gmt'), "%Y%m%d-%H%M%S", 'gmt').")\n\n".$return_var."\n".$return_varmysql;
 
 		include_once DOL_DOCUMENT_ROOT.'/core/class/CMailFile.class.php';
-		print 'Send email MAIN_MAIL_SENDMODE='.$conf->global->MAIN_MAIL_SENDMODE.' MAIN_MAIL_SMTP_SERVER='.$conf->global->MAIN_MAIL_SMTP_SERVER.' from='.$from.' to='.$to.' title=[Warning] Error(s) in restoring - '.gethostname().' - '.dol_print_date(dol_now(), 'dayrfc')."\n";
+		print 'Send email MAIN_MAIL_SENDMODE='.getDolGlobalString('MAIN_MAIL_SENDMODE').' MAIN_MAIL_SMTP_SERVER='.getDolGlobalString('MAIN_MAIL_SMTP_SERVER').' from='.$from.' to='.$to.' title=[Warning] Error(s) in restoring - '.gethostname().' - '.dol_print_date(dol_now(), 'dayrfc')."\n";
 		$cmail = new CMailFile('[Warning] Error(s) in restore process - '.gethostname().' - '.dol_print_date(dol_now(), 'dayrfc'), $to, $from, $msg, array(), array(), array(), '', '', 0, 0, '', '', '', '', $sendcontext);
 		$result = $cmail->sendfile();		// Use the $conf->global->MAIN_MAIL_SMTPS_PW_$SENDCONTEXT for password
 

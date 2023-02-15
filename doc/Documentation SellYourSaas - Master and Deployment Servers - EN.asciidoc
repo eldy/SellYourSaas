@@ -793,6 +793,8 @@ allowed_hosts=127.0.0.1,ipofmasterserver
 emailfrom=noreply@mysaasdomainname.com
 # email supervision
 emailsupervision=supervision@mysaasdomainname.com
+# Option to use mail server of master server (for scripts system)
+# usemastermailserver=1
 
 # Set location of the master database
 databasehost=ipOfMasterServer or localhost if on master server

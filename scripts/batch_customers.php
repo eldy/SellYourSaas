@@ -97,6 +97,7 @@ $databasepass='';
 $ipserverdeployment='';
 $emailfrom='';
 $emailsupervision='';
+$usemastermailserver='';
 $fp = @fopen('/etc/sellyoursaas.conf', 'r');
 // Add each line to an array
 if ($fp) {
@@ -130,6 +131,9 @@ if ($fp) {
 		if ($tmpline[0] == 'emailsupervision') {
 			$emailsupervision = $tmpline[1];
 		}
+		if ($tmpline[0] == 'usemastermailserver') {
+			$usemastermailserver = $tmpline[1];
+		}
 	}
 } else {
 	print "Failed to open /etc/sellyoursaas.conf file\n";
@@ -158,6 +162,11 @@ if ($dbmaster->error) {
 	$from = $emailfrom;
 	$to = $emailsupervision;
 	// Supervision tools are generic for all domain. No way to target a specific supervision email.
+	// Force to use local sending (MAIN_MAIL_SENDMODE is the one of the master server. It may be to an external SMTP server not allowed to the deployment server)
+	if (empty($usemastermailserver)) {
+		$conf->global->MAIN_MAIL_SENDMODE = 'mail';
+		$conf->global->MAIN_MAIL_SMTP_SERVER = 'localhost';
+	}
 
 	$msg = 'Error in '.$script_file." ".(empty($argv[1]) ? '' : $argv[1])." ".(empty($argv[2]) ? '' : $argv[2])." (finished at ".dol_print_date(dol_now('gmt'), "%Y%m%d-%H%M%S", 'gmt').")\n\n".$dbmaster->error;
 
@@ -768,8 +777,10 @@ if (! $nboferrors) {
 			$from = $emailfrom;
 			$to = $emailsupervision;
 			// Force to use local sending (MAIN_MAIL_SENDMODE is the one of the master server. It may be to an external SMTP server not allowed to the deployment server)
-			$conf->global->MAIN_MAIL_SENDMODE = 'mail';
-			$conf->global->MAIN_MAIL_SMTP_SERVER = 'localhost';
+			if (empty($usemastermailserver)) {
+				$conf->global->MAIN_MAIL_SENDMODE = 'mail';
+				$conf->global->MAIN_MAIL_SMTP_SERVER = 'localhost';
+			}
 
 			$msg = 'Backup done without errors on '.gethostname().' by '.$script_file." ".(empty($argv[1]) ? '' : $argv[1])." ".(empty($argv[2]) ? '' : $argv[2])." (finished at ".dol_print_date(dol_now('gmt'), "%Y%m%d-%H%M%S", 'gmt').")\n\n".$out;
 
@@ -784,7 +795,7 @@ if (! $nboferrors) {
 			}*/
 
 			include_once DOL_DOCUMENT_ROOT.'/core/class/CMailFile.class.php';
-			print 'Send email MAIN_MAIL_SENDMODE='.$conf->global->MAIN_MAIL_SENDMODE.' MAIN_MAIL_SMTP_SERVER='.$conf->global->MAIN_MAIL_SMTP_SERVER.' from='.$from.' to='.$to.' title=[Backup instances - '.gethostname().'] Backup of user instances succeed'."\n";
+			print 'Send email MAIN_MAIL_SENDMODE='.getDolGlobalString('MAIN_MAIL_SENDMODE').' MAIN_MAIL_SMTP_SERVER='.getDolGlobalString('MAIN_MAIL_SMTP_SERVER').' from='.$from.' to='.$to.' title=[Backup instances - '.gethostname().'] Backup of user instances succeed'."\n";
 			$cmail = new CMailFile('[Backup instances - '.gethostname().'] Backup of user instances succeed', $to, $from, $msg, array(), array(), array(), '', '', 0, 0, '', '', '', '', $sendcontext);
 			$result = $cmail->sendfile();		// Use the $conf->global->MAIN_MAIL_SMTPS_PW_$SENDCONTEXT for password
 		} else {
@@ -799,15 +810,17 @@ if (! $nboferrors) {
 			$from = $emailfrom;
 			$to = $emailsupervision;
 			// Force to use local sending (MAIN_MAIL_SENDMODE is the one of the master server. It may be to an external SMTP server not allowed to the deployment server)
-			$conf->global->MAIN_MAIL_SENDMODE = 'mail';
-			$conf->global->MAIN_MAIL_SMTP_SERVER = '';
+			if (empty($usemastermailserver)) {
+				$conf->global->MAIN_MAIL_SENDMODE = 'mail';
+				$conf->global->MAIN_MAIL_SMTP_SERVER = 'localhost';
+			}
 
 			// Supervision tools are generic for all domains. No way to target a specific supervision email.
 
 			$msg = 'Error in '.$script_file." ".$argv[1]." ".$argv[2]." (finished at ".dol_print_date(dol_now('gmt'), "%Y%m%d-%H%M%S", 'gmt').")\n\n".$out;
 
 			include_once DOL_DOCUMENT_ROOT.'/core/class/CMailFile.class.php';
-			print 'Send email MAIN_MAIL_SENDMODE='.$conf->global->MAIN_MAIL_SENDMODE.' MAIN_MAIL_SMTP_SERVER='.$conf->global->MAIN_MAIL_SMTP_SERVER.' from='.$from.' to='.$to.' title=[Warning] Error(s) in backups - '.gethostname().' - '.dol_print_date(dol_now(), 'dayrfc')."\n";
+			print 'Send email MAIN_MAIL_SENDMODE='.getDolGlobalString('MAIN_MAIL_SENDMODE').' MAIN_MAIL_SMTP_SERVER='.getDolGlobalString('MAIN_MAIL_SMTP_SERVER').' from='.$from.' to='.$to.' title=[Warning] Error(s) in backups - '.gethostname().' - '.dol_print_date(dol_now(), 'dayrfc')."\n";
 			$cmail = new CMailFile('[Warning] Error(s) in backups - '.gethostname().' - '.dol_print_date(dol_now(), 'dayrfc'), $to, $from, $msg, array(), array(), array(), '', '', 0, 0, '', '', '', '', $sendcontext);
 			$result = $cmail->sendfile();		// Use the $conf->global->MAIN_MAIL_SMTPS_PW_$SENDCONTEXT for password
 

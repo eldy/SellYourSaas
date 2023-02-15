@@ -86,6 +86,7 @@ $databasepass='';
 $ipserverdeployment='';
 $emailfrom='';
 $emailsupervision='';
+$usemastermailserver='';
 $fp = @fopen('/etc/sellyoursaas.conf', 'r');
 // Add each line to an array
 if ($fp) {
@@ -118,6 +119,9 @@ if ($fp) {
 		}
 		if ($tmpline[0] == 'emailsupervision') {
 			$emailsupervision = $tmpline[1];
+		}
+		if ($tmpline[0] == 'usemastermailserver') {
+			$usemastermailserver = $tmpline[1];
 		}
 	}
 } else {
@@ -829,15 +833,17 @@ if ($nboferrors) {
 		$from = $emailfrom;
 		$to = $emailsupervision;
 		// Force to use local sending (MAIN_MAIL_SENDMODE is the one of the master server. It may be to an external SMTP server not allowed to the deployment server)
-		$conf->global->MAIN_MAIL_SENDMODE = 'mail';
-		$conf->global->MAIN_MAIL_SMTP_SERVER = '';
+		if (empty($usemastermailserver)) {
+			$conf->global->MAIN_MAIL_SENDMODE = 'mail';
+			$conf->global->MAIN_MAIL_SMTP_SERVER = 'localhost';
+		}
 
 		// Supervision tools are generic for all domain. No way to target a specific supervision email.
 
 		$msg = 'Error in '.$script_file." ".$argv[1]." ".$argv[2]." (finished at ".dol_print_date(dol_now('gmt'), "%Y%m%d-%H%M%S", 'gmt').")\n\n".$out;
 
 		include_once DOL_DOCUMENT_ROOT.'/core/class/CMailFile.class.php';
-		print 'Send email MAIN_MAIL_SENDMODE='.$conf->global->MAIN_MAIL_SENDMODE.' MAIN_MAIL_SMTP_SERVER='.$conf->global->MAIN_MAIL_SMTP_SERVER.' from='.$from.' to='.$to.' title=[Warning] Alert(s) in batch_detect_evil_instances - '.gethostname().' - '.dol_print_date(dol_now(), 'dayrfc')."\n";
+		print 'Send email MAIN_MAIL_SENDMODE='.getDolGlobalString('MAIN_MAIL_SENDMODE').' MAIN_MAIL_SMTP_SERVER='.getDolGlobalString('MAIN_MAIL_SMTP_SERVER').' from='.$from.' to='.$to.' title=[Warning] Alert(s) in batch_detect_evil_instances - '.gethostname().' - '.dol_print_date(dol_now(), 'dayrfc')."\n";
 		$cmail = new CMailFile('[Alert] Alert(s) in batch_detect_evil_instances - '.gethostname().' - '.dol_print_date(dol_now(), 'dayrfc'), $to, $from, $msg, array(), array(), array(), '', '', 0, 0, '', '', '', '', $sendcontext);
 		$result = $cmail->sendfile();
 	}
