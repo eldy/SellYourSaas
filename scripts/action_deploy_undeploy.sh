@@ -1416,7 +1416,7 @@ if [[ "$mode" == "deploy" || "$mode" == "deployall" ]]; then
 		Q3a="SET PASSWORD FOR '$dbusername'@'localhost' = PASSWORD('$dbpassword'); "
 		Q3b="SET PASSWORD FOR '$dbusername'@'%' = PASSWORD('$dbpassword'); "
 	else
-		Q3="UPDATE mysql.user SET Password=PASSWORD('$dbpassword') WHERE User='$dbusername'; "
+		Q3="SET PASSWORD FOR '$dbusername' = PASSWORD('$dbpassword')"
 		Q3a=""
 		Q3b=""
 		# If we use mysql and not mariadb, we set password differently
